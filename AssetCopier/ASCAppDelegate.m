@@ -123,11 +123,38 @@ NSString * const kXCAssetsImageName = @"xcassets128";
     if ( retinaRange.location != NSNotFound ) {
         basename = [basename stringByReplacingCharactersInRange:retinaRange withString:@""];
     }
-    
-    NSString *destFolder = [self.xcassetsPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.imageset", basename]];
-    NSString *destFile = [destFolder stringByAppendingPathComponent:fileName];
-    
+
     NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *destFile = nil;
+
+    NSDirectoryEnumerator *enumerator = [fileManager
+                                         enumeratorAtURL:[NSURL URLWithString:self.xcassetsPath]
+                                         includingPropertiesForKeys:nil
+                                         options:0
+                                         errorHandler:^(NSURL *url, NSError *error) {
+                                             // Handle the error.
+                                             // Return YES if the enumeration should continue after the error.
+                                             return YES;
+                                         }];
+
+    for (NSURL *url in enumerator)
+    {
+        NSError *error;
+        NSNumber *isDirectory = nil;
+        if (![url getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:&error])
+        {
+            NSLog(@"%@", error);
+        }
+        else if (![isDirectory boolValue])
+        {
+            if ([[url lastPathComponent] isEqualToString:fileName])
+            {
+                destFile = [url path];
+                break;
+            }
+        }
+    }
+    
     if ([fileManager fileExistsAtPath:destFile]) {
         
         NSError *deleteError;
